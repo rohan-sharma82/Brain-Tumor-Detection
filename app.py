@@ -3,7 +3,11 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-model = tf.keras.models.load_model("model.h5")
+# Load model
+model = tf.keras.models.load_model("bestmodel_finetuned.keras", compile=False)
+
+# Change classes based on your model
+classes = ["Glioma", "Meningioma", "Pituitary", "No Tumor"]
 
 def predict(image):
     image = image.resize((224, 224))
@@ -11,16 +15,18 @@ def predict(image):
     image = np.expand_dims(image, axis=0)
 
     prediction = model.predict(image)[0]
-    
-    if prediction[0] > 0.5:
-        return "Tumor Detected"
-    else:
-        return "No Tumor"
 
-gr.Interface(
+    return {
+        classes[i]: float(prediction[i]) for i in range(len(classes))
+    }
+
+interface = gr.Interface(
     fn=predict,
     inputs=gr.Image(type="pil"),
-    outputs="text",
+    outputs=gr.Label(),
     title="🧠 Brain Tumor Detection",
-    description="Upload MRI Image"
-).launch()
+    description="Upload MRI scan to detect tumor type"
+)
+
+# IMPORTANT for Render
+interface.launch(server_name="0.0.0.0", server_port=7860)
